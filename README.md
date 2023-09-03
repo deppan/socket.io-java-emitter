@@ -6,6 +6,24 @@ A Java implementation of socket.io-emitter
 
 This project uses [jackson-dataformat-msgpack][mspack-java] and [RedisTemplate]() or [RedisPool]().
 
+### Download
+
+Gradle:
+```gradle
+dependencies {
+  implementation 'io.github.deppan:socket.io-java-emitter:1.0.2'
+}
+```
+
+Maven:
+```xml
+<dependency>
+  <groupId>io.github.deppan</groupId>
+  <artifactId>io-java-emitter</artifactId>
+  <version>1.0.2</version>
+</dependency>
+```
+
 ## Usage
 
 ### Using with RedisTemplate
