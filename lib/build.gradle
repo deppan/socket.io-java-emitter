@@ -21,6 +21,16 @@ dependencies {
     api("redis.clients:jedis:4.4.3")
 }
 
+tasks.register('sourcesJar', Jar) {
+    archiveClassifier.set('sources')
+    from sourceSets.main.allJava
+}
+
+tasks.register('javadocJar', Jar) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
 static def release() {
     return "https://s01.oss.sonatype.org/content/repositories/releases"
 }
