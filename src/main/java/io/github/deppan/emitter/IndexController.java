@@ -26,7 +26,7 @@ public class IndexController {
         io.in("a").emit("event", Map.of("hello", "world"));
         io.in("a").socketsLeave("a");
         io.in("a").emit("event", Map.of("hello", "hi"));
-        io.in("b").emit("event", Map.of("hello", "world"));
+        io.emit("event", Map.of("hello", "world"));
 
         return ResponseEntity.ok("OK");
     }
