@@ -18,7 +18,8 @@ repositories {
 
 dependencies {
     implementation("org.msgpack:jackson-dataformat-msgpack:0.9.6")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
+    implementation("ch.qos.logback:logback-classic:1.4.12")
     api("org.springframework.data:spring-data-redis:3.1.5")
     api("redis.clients:jedis:5.0.2")
 }
