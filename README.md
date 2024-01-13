@@ -11,7 +11,7 @@ This project uses [jackson-dataformat-msgpack][mspack-java] and [RedisTemplate](
 Gradle:
 ```gradle
 dependencies {
-  implementation 'io.github.deppan:socket.io-java-emitter:1.0.2'
+  implementation 'io.github.deppan:socket.io-java-emitter:1.0.4'
 }
 ```
 
@@ -20,7 +20,7 @@ Maven:
 <dependency>
   <groupId>io.github.deppan</groupId>
   <artifactId>io-java-emitter</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.4</version>
 </dependency>
 ```
 
