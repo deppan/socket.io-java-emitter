@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id 'maven-publish'
+    id 'org.jreleaser' version '1.18.0'
 }
 
 java {
@@ -66,25 +66,46 @@ static def versionName() {
     }
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                groupId = "io.github.deppan"
-                artifactId = "socket.io-java-emitter"
-                version = versionName()
-
-                from components.java
+jreleaser {
+    project {
+        name = 'socket.io-java-emitter'
+        version = versionName()
+        author('deppan')
+        description = 'A Java implementation of socket.io-emitter.'
+        inceptionYear = "2023"
+        license = 'MIT'
+        languages {
+            java {
+                version = '8'
+                groupId = 'io.github.deppan'
+                artifactId = 'socket.io-java-emitter'
             }
         }
+    }
 
-        repositories {
-            maven {
-                url = publishUrl()
-                credentials {
-                    username = project.property('maven.username')
-                    password = project.property('maven.password')
-                }
+    gitRootSearch = true
+
+    signing {
+        active = 'ALWAYS'
+        armored = true
+        mode = 'FILE'
+        publicKey = '/Users/deppan/.jreleaser/public.pgp'
+        secretKey = '/Users/deppan/.jreleaser/private.pgp'
+    }
+
+    deploy {
+        maven {
+            mavenCentral.create("sonatype") {
+                active = 'ALWAYS'
+                url = 'https://central.sonatype.com/api/v1/publisher'
+                stagingRepository('build/staging-deploy')
+                setAuthorization("Basic")
+                applyMavenCentralRules = true
+                sign = true
+                checksums = true
+                sourceJar = true
+                javadocJar = true
+                retryDelay = 60
             }
         }
     }
