@@ -1,7 +1,6 @@
 socket.io-java-emitter
 ======================
 
-
 A Java implementation of socket.io-emitter
 
 This project uses [jackson-dataformat-msgpack][mspack-java] and [RedisTemplate]() or [RedisPool]().
@@ -11,7 +10,7 @@ This project uses [jackson-dataformat-msgpack][mspack-java] and [RedisTemplate](
 Gradle:
 ```gradle
 dependencies {
-  implementation 'io.github.deppan:socket.io-java-emitter:1.0.4'
+  implementation 'io.github.deppan:socket.io-java-emitter:1.0.5'
 }
 ```
 
@@ -20,7 +19,7 @@ Maven:
 <dependency>
   <groupId>io.github.deppan</groupId>
   <artifactId>io-java-emitter</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.5</version>
 </dependency>
 ```
 
@@ -106,6 +105,15 @@ io.of("/admin").in("room1").disconnectSockets();
 
 // this also works with a single socket ID
 io.of("/admin").in(theSocketId).disconnectSockets();
+```
+
+### Emitter#serverSideEmit(String ev, Object... args)
+
+Send a packet to the Socket.IO servers in the cluster.
+
+```java
+// Send the event and message to all servers.
+io.serverSideEmit("forward", Map.of("hello", "world"));
 ```
 
 ### License

@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BroadcastOptions {
-    String nsp;
-    String broadcastChannel;
-    String requestChannel;
-    Parser parser;
-    Logger logger;
+    final String nsp;
+    final String broadcastChannel;
+    final String requestChannel;
+    final Parser parser;
+    final Logger logger;
 
     public BroadcastOptions(String nsp, String broadcastChannel, String requestChannel, Parser parser) {
         this.nsp = nsp;

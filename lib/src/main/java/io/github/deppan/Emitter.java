@@ -1,15 +1,14 @@
 package io.github.deppan;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Emitter {
 
     public final static String UID = "emitter";
-
     private final EmitterOptions opts;
-
     private final BroadcastOptions broadcastOptions;
-
     private final RedisClient redisClient;
 
     public Emitter(RedisClient redisClient, EmitterOptions opts, String nsp) {
@@ -20,19 +19,19 @@ public class Emitter {
         this.redisClient = redisClient;
         this.opts = new EmitterOptions("socket.io", new MsgPackParser());
         if (opts != null) {
-            if (opts.key != null) {
-                this.opts.key = opts.key;
+            if (opts.key() != null) {
+                this.opts.key(opts.key());
             }
-            if (opts.parser != null) {
-                this.opts.parser = opts.parser;
+            if (opts.parser() != null) {
+                this.opts.parser(opts.parser());
             }
         }
 
         this.broadcastOptions = new BroadcastOptions(
                 nsp,
-                this.opts.key + "#" + nsp + "#",
-                this.opts.key + "-request#" + nsp + "#",
-                this.opts.parser
+                this.opts.key() + "#" + nsp + "#",
+                this.opts.key() + "-request#" + nsp + "#",
+                this.opts.parser()
         );
     }
 
@@ -94,8 +93,8 @@ public class Emitter {
      *
      * @return BroadcastOperator
      */
-    public BroadcastOperator volatileFunc() {
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions).volatileFunc();
+    public BroadcastOperator volatile_() {
+        return new BroadcastOperator(this.redisClient, this.broadcastOptions).volatile_();
     }
 
     /**
@@ -141,10 +140,14 @@ public class Emitter {
      * @param args - any number of serializable arguments
      */
     public void serverSideEmit(Object... args) {
-        Map<String, Object> map = Map.of("uid", Emitter.UID, "type", RequestType.SERVER_SIDE_EMIT.value, "data", args);
+        Map<String, Object> map = new HashMap<>() {{
+            put("uid", Emitter.UID);
+            put("type", RequestType.SERVER_SIDE_EMIT.value);
+            put("data", args);
+        }};
         try {
-            byte[] request = this.broadcastOptions.parser.encode(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request);
+            String request = this.broadcastOptions.parser.stringify(map);
+            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
             this.broadcastOptions.logger.debug("serverSideEmit: {}", exception.toString());
         }

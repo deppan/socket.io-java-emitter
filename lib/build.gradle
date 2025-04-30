@@ -3,9 +3,6 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'io.github.deppan'
-version = '1.0.0'
-
 java {
     sourceCompatibility = '17'
     withJavadocJar()
@@ -17,11 +14,19 @@ repositories {
 }
 
 dependencies {
-    implementation("org.msgpack:jackson-dataformat-msgpack:0.9.6")
+    implementation("org.msgpack:jackson-dataformat-msgpack:0.9.7")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
-    implementation("ch.qos.logback:logback-classic:1.4.12")
-    api("org.springframework.data:spring-data-redis:3.1.5")
-    api("redis.clients:jedis:5.0.2")
+    implementation 'org.slf4j:slf4j-api:2.0.17'
+
+    compileOnly("org.springframework.data:spring-data-redis:3.2.1")
+    compileOnly("redis.clients:jedis:5.1.0")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 static def release() {

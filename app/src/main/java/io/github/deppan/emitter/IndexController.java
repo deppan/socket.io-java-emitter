@@ -23,10 +23,12 @@ public class IndexController {
     public ResponseEntity<?> index() {
         RedisClient redisClient = new RedisClient(this.redisTemplate);
         Emitter io = new Emitter(redisClient, new EmitterOptions(), "/");
-        io.in("a").emit("event", Map.of("hello", "world"));
-        io.in("a").socketsLeave("a");
-        io.in("a").emit("event", Map.of("hello", "hi"));
-        io.emit("event", Map.of("hello", "world"));
+        io.in("O3w3DKhD-2VJmuFgAAAB").emit("event", Map.of("hello", "world"));
+        io.in("O3w3DKhD-2VJmuFgAAAB").socketsJoin("a");
+        io.in("a").emit("event", Map.of("a", "b"));
+
+        io.serverSideEmit("forward", Map.of("hello", "world"));
+        io.in("a").disconnectSockets(false);
 
         return ResponseEntity.ok("OK");
     }

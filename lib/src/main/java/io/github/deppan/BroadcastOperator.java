@@ -1,22 +1,23 @@
 package io.github.deppan;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class BroadcastOperator {
 
-    private final Set<String> reserved = Set.of(new String[]{
-            "connect", "connect_error", "disconnect",
-            "disconnecting", "newListener", "removeListener"});
-
+    private final Set<String> reserved = new HashSet<String>() {{
+        add("connect");
+        add("connect_error");
+        add("disconnect");
+        add("disconnecting");
+        add("newListener");
+        add("removeListener");
+    }};
     private final RedisClient redisClient;
-
     private final BroadcastOptions broadcastOptions;
-
     private Set<String> rooms = new HashSet<>();
-
     private Set<String> exceptRooms = new HashSet<>();
-
     private Map<String, Object> flags = new HashMap<>();
 
     public BroadcastOperator(RedisClient redisClient, BroadcastOptions broadcastOptions, Set<String> rooms, Set<String> exceptRooms, Map<String, Object> flags) {
@@ -38,34 +39,70 @@ public class BroadcastOperator {
         this.broadcastOptions = broadcastOptions;
     }
 
+    /**
+     * Targets a room when emitting.
+     *
+     * @param room
+     * @return a new BroadcastOperator instance
+     */
     public BroadcastOperator to(String... room) {
         Set<String> rooms = new HashSet<>(this.rooms);
         Collections.addAll(rooms, room);
         return new BroadcastOperator(this.redisClient, this.broadcastOptions, rooms, this.exceptRooms, this.flags);
     }
 
+    /**
+     * Targets a room when emitting.
+     *
+     * @param room
+     * @return a new BroadcastOperator instance
+     */
     public BroadcastOperator in(String... room) {
         return this.to(room);
     }
 
+    /**
+     * Excludes a room when emitting.
+     *
+     * @param room
+     * @return a new BroadcastOperator instance
+     */
     public BroadcastOperator except(String... room) {
         Set<String> exceptRooms = new HashSet<>(this.exceptRooms);
         Collections.addAll(exceptRooms, room);
         return new BroadcastOperator(this.redisClient, this.broadcastOptions, this.rooms, exceptRooms, this.flags);
     }
 
+    /**
+     * Sets the compress flag.
+     *
+     * @param compress - if `true`, compresses the sending data
+     * @return a new BroadcastOperator instance
+     */
     public BroadcastOperator compress(boolean compress) {
         Map<String, Object> flags = new HashMap<>(this.flags);
         flags.put("compress", compress);
         return new BroadcastOperator(this.redisClient, this.broadcastOptions, this.rooms, this.exceptRooms, flags);
     }
 
-    public BroadcastOperator volatileFunc() {
+    /**
+     * Sets a modifier for a subsequent event emission that the event data may be lost if the client is not ready to
+     * receive messages (because of network slowness or other issues, or because they’re connected through long polling
+     * and is in the middle of a request-response cycle).
+     *
+     * @return a new BroadcastOperator instance
+     */
+    public BroadcastOperator volatile_() {
         Map<String, Object> flags = new HashMap<>(this.flags);
-        flags.put("volatile", "true");
+        flags.put("volatile", true);
         return new BroadcastOperator(this.redisClient, this.broadcastOptions, this.rooms, this.exceptRooms, flags);
     }
 
+    /**
+     * Emits to all clients.
+     *
+     * @return Always true
+     */
     public boolean emit(String event, Object... args) {
         if (reserved.contains(event)) {
             throw new RuntimeException("\"" + event + "\" is a reserved event name");
@@ -73,8 +110,16 @@ public class BroadcastOperator {
         List<Object> data = new ArrayList<>();
         data.add(event);
         Collections.addAll(data, args);
-        Map<String, Object> packet = Map.of("type", PacketType.EVENT.value, "data", data, "nsp", this.broadcastOptions.nsp);
-        Map<String, Object> ops = Map.of("rooms", new ArrayList<>(this.rooms), "flags", this.flags, "except", new ArrayList<>(this.exceptRooms));
+        Map<String, Object> packet = new HashMap<>() {{
+            put("type", PacketType.EVENT.value);
+            put("data", data);
+            put("nsp", BroadcastOperator.this.broadcastOptions.nsp);
+        }};
+        Map<String, Object> ops = new HashMap<>() {{
+            put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
+            put("flags", BroadcastOperator.this.flags);
+            put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
+        }};
 
         String channel = this.broadcastOptions.broadcastChannel;
         if (this.rooms.size() == 1) {
@@ -90,43 +135,70 @@ public class BroadcastOperator {
         }
     }
 
-    public void socketsJoin(String... room) {
-        Map<String, Object> map = Map.of(
-                "type", RequestType.REMOTE_JOIN.value,
-                "opts", Map.of("rooms", new ArrayList<>(this.rooms), "except", new ArrayList<>(this.exceptRooms)),
-                "rooms", room.length == 1 ? room[0] : Arrays.asList(room)
-        );
+    /**
+     * Makes the matching socket instances join the specified rooms
+     *
+     * @param rooms
+     */
+    public void socketsJoin(String... rooms) {
+        Map<String, Object> map = new HashMap<>() {{
+            put("type", RequestType.REMOTE_JOIN.value);
+            put("opts", new HashMap<String, Object>() {{
+                put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
+                put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
+            }});
+            put("rooms", rooms.length == 1 ? rooms[0] : Arrays.asList(rooms));
+        }};
+
         try {
-            byte[] request = this.broadcastOptions.parser.encode(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request);
+            String request = this.broadcastOptions.parser.stringify(map);
+            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
             this.broadcastOptions.logger.debug("socketsJoin: {}", exception.toString());
         }
     }
 
-    public void socketsLeave(String... room) {
-        Map<String, Object> map = Map.of(
-                "type", RequestType.REMOTE_LEAVE.value,
-                "opts", Map.of("rooms", new ArrayList<>(this.rooms), "except", new ArrayList<>(this.exceptRooms)),
-                "rooms", Arrays.asList(room)
-        );
+    /**
+     * Makes the matching socket instances leave the specified rooms
+     *
+     * @param rooms
+     */
+    public void socketsLeave(String... rooms) {
+        Map<String, Object> map = new HashMap<>() {{
+            put("type", RequestType.REMOTE_LEAVE.value);
+            put("opts", new HashMap<String, Object>() {{
+                put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
+                put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
+            }});
+            put("rooms", Arrays.asList(rooms));
+        }};
+
         try {
-            byte[] request = this.broadcastOptions.parser.encode(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request);
+            String request = this.broadcastOptions.parser.stringify(map);
+            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
             this.broadcastOptions.logger.debug("socketsLeave: {}", exception.toString());
         }
     }
 
+    /**
+     * Makes the matching socket instances disconnect
+     *
+     * @param close - whether to close the underlying connection
+     */
     public void disconnectSockets(boolean close) {
-        Map<String, Object> map = Map.of(
-                "type", RequestType.REMOTE_DISCONNECT.value,
-                "opts", Map.of("rooms", new ArrayList<>(this.rooms), "except", new ArrayList<>(this.exceptRooms)),
-                "close", close
-        );
+        Map<String, Object> map = new HashMap<>() {{
+            put("type", RequestType.REMOTE_DISCONNECT.value);
+            put("opts", new HashMap<String, Object>() {{
+                put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
+                put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
+            }});
+            put("close", close);
+        }};
+
         try {
-            byte[] request = this.broadcastOptions.parser.encode(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request);
+            String request = this.broadcastOptions.parser.stringify(map);
+            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
             this.broadcastOptions.logger.debug("disconnectSockets: {}", exception.toString());
         }
