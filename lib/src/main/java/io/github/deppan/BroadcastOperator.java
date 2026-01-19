@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public class BroadcastOperator {
 
-    private final Set<String> reserved = new HashSet<String>() {{
+    private final Set<String> reserved = new HashSet<>() {{
         add("connect");
         add("connect_error");
         add("disconnect");
@@ -14,14 +14,14 @@ public class BroadcastOperator {
         add("newListener");
         add("removeListener");
     }};
-    private final RedisClient redisClient;
+    private final PublishListener publishListener;
     private final BroadcastOptions broadcastOptions;
     private Set<String> rooms = new HashSet<>();
     private Set<String> exceptRooms = new HashSet<>();
     private Map<String, Object> flags = new HashMap<>();
 
-    public BroadcastOperator(RedisClient redisClient, BroadcastOptions broadcastOptions, Set<String> rooms, Set<String> exceptRooms, Map<String, Object> flags) {
-        this.redisClient = redisClient;
+    public BroadcastOperator(PublishListener publishListener, BroadcastOptions broadcastOptions, Set<String> rooms, Set<String> exceptRooms, Map<String, Object> flags) {
+        this.publishListener = publishListener;
         this.broadcastOptions = broadcastOptions;
         if (rooms != null) {
             this.rooms = rooms;
@@ -34,8 +34,8 @@ public class BroadcastOperator {
         }
     }
 
-    public BroadcastOperator(RedisClient redisClient, BroadcastOptions broadcastOptions) {
-        this.redisClient = redisClient;
+    public BroadcastOperator(PublishListener publishListener, BroadcastOptions broadcastOptions) {
+        this.publishListener = publishListener;
         this.broadcastOptions = broadcastOptions;
     }
 
@@ -48,7 +48,7 @@ public class BroadcastOperator {
     public BroadcastOperator to(String... room) {
         Set<String> rooms = new HashSet<>(this.rooms);
         Collections.addAll(rooms, room);
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions, rooms, this.exceptRooms, this.flags);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions, rooms, this.exceptRooms, this.flags);
     }
 
     /**
@@ -70,7 +70,7 @@ public class BroadcastOperator {
     public BroadcastOperator except(String... room) {
         Set<String> exceptRooms = new HashSet<>(this.exceptRooms);
         Collections.addAll(exceptRooms, room);
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions, this.rooms, exceptRooms, this.flags);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions, this.rooms, exceptRooms, this.flags);
     }
 
     /**
@@ -82,7 +82,7 @@ public class BroadcastOperator {
     public BroadcastOperator compress(boolean compress) {
         Map<String, Object> flags = new HashMap<>(this.flags);
         flags.put("compress", compress);
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions, this.rooms, this.exceptRooms, flags);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions, this.rooms, this.exceptRooms, flags);
     }
 
     /**
@@ -95,7 +95,7 @@ public class BroadcastOperator {
     public BroadcastOperator volatile_() {
         Map<String, Object> flags = new HashMap<>(this.flags);
         flags.put("volatile", true);
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions, this.rooms, this.exceptRooms, flags);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions, this.rooms, this.exceptRooms, flags);
     }
 
     /**
@@ -127,10 +127,10 @@ public class BroadcastOperator {
         }
         try {
             byte[] msg = this.broadcastOptions.parser.encode(Arrays.asList(Emitter.UID, packet, ops));
-            this.redisClient.publish(channel, msg);
+            this.publishListener.publish(channel, msg);
             return true;
         } catch (Exception exception) {
-            this.broadcastOptions.logger.debug("emit: {}", exception.toString());
+            this.broadcastOptions.logger.error("emit", exception);
             return false;
         }
     }
@@ -152,9 +152,9 @@ public class BroadcastOperator {
 
         try {
             String request = this.broadcastOptions.parser.stringify(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
+            this.publishListener.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
-            this.broadcastOptions.logger.debug("socketsJoin: {}", exception.toString());
+            this.broadcastOptions.logger.error("socketsJoin", exception);
         }
     }
 
@@ -175,9 +175,9 @@ public class BroadcastOperator {
 
         try {
             String request = this.broadcastOptions.parser.stringify(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
+            this.publishListener.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
-            this.broadcastOptions.logger.debug("socketsLeave: {}", exception.toString());
+            this.broadcastOptions.logger.error("socketsLeave", exception);
         }
     }
 
@@ -198,9 +198,9 @@ public class BroadcastOperator {
 
         try {
             String request = this.broadcastOptions.parser.stringify(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
+            this.publishListener.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
-            this.broadcastOptions.logger.debug("disconnectSockets: {}", exception.toString());
+            this.broadcastOptions.logger.error("disconnectSockets", exception);
         }
     }
 }

@@ -2,7 +2,7 @@ package io.github.deppan.emitter;
 
 import io.github.deppan.Emitter;
 import io.github.deppan.EmitterOptions;
-import io.github.deppan.RedisClient;
+import io.github.deppan.PublishListener;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,10 +21,13 @@ public class IndexController {
 
     @GetMapping("/")
     public ResponseEntity<?> index() {
-        RedisClient redisClient = new RedisClient(this.redisTemplate);
-        Emitter io = new Emitter(redisClient, new EmitterOptions(), "/");
-        io.in("O3w3DKhD-2VJmuFgAAAB").emit("event", Map.of("hello", "world"));
-        io.in("O3w3DKhD-2VJmuFgAAAB").socketsJoin("a");
+        PublishListener publishListener = new PublishListener() {
+            @Override
+            public void publish(String channel, Object msg) {
+                redisTemplate.convertAndSend(channel, msg);
+            }
+        };
+        Emitter io = new Emitter(publishListener, new EmitterOptions(), "/");
         io.in("a").emit("event", Map.of("a", "b"));
 
         io.serverSideEmit("forward", Map.of("hello", "world"));

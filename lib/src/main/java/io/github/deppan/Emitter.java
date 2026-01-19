@@ -9,14 +9,14 @@ public class Emitter {
     public final static String UID = "emitter";
     private final EmitterOptions opts;
     private final BroadcastOptions broadcastOptions;
-    private final RedisClient redisClient;
+    private final PublishListener publishListener;
 
-    public Emitter(RedisClient redisClient, EmitterOptions opts, String nsp) {
+    public Emitter(PublishListener publishListener, EmitterOptions opts, String nsp) {
         if (nsp == null) {
             nsp = "/";
         }
 
-        this.redisClient = redisClient;
+        this.publishListener = publishListener;
         this.opts = new EmitterOptions("socket.io", new MsgPackParser());
         if (opts != null) {
             if (opts.key() != null) {
@@ -42,7 +42,7 @@ public class Emitter {
      * @return - a emitter instance
      */
     public Emitter of(String nsp) {
-        return new Emitter(this.redisClient, this.opts, (nsp.charAt(0) != '/' ? "/" : "") + nsp);
+        return new Emitter(this.publishListener, this.opts, (nsp.charAt(0) != '/' ? "/" : "") + nsp);
     }
 
     /**
@@ -53,7 +53,7 @@ public class Emitter {
      * @return true
      */
     public boolean emit(String event, Object... args) {
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions).emit(event, args);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions).emit(event, args);
     }
 
     /**
@@ -63,7 +63,7 @@ public class Emitter {
      * @return BroadcastOperator
      */
     public BroadcastOperator to(String... room) {
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions).to(room);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions).to(room);
     }
 
     /**
@@ -73,7 +73,7 @@ public class Emitter {
      * @return BroadcastOperator
      */
     public BroadcastOperator in(String... room) {
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions).in(room);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions).in(room);
     }
 
     /**
@@ -83,7 +83,7 @@ public class Emitter {
      * @return BroadcastOperator
      */
     public BroadcastOperator except(String... room) {
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions).except(room);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions).except(room);
     }
 
     /**
@@ -94,7 +94,7 @@ public class Emitter {
      * @return BroadcastOperator
      */
     public BroadcastOperator volatile_() {
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions).volatile_();
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions).volatile_();
     }
 
     /**
@@ -104,7 +104,7 @@ public class Emitter {
      * @return BroadcastOperator
      */
     public BroadcastOperator compress(boolean compress) {
-        return new BroadcastOperator(this.redisClient, this.broadcastOptions).compress(compress);
+        return new BroadcastOperator(this.publishListener, this.broadcastOptions).compress(compress);
     }
 
     /**
@@ -113,7 +113,7 @@ public class Emitter {
      * @param room -
      */
     public void socketsJoin(String... room) {
-        new BroadcastOperator(this.redisClient, this.broadcastOptions).socketsJoin(room);
+        new BroadcastOperator(this.publishListener, this.broadcastOptions).socketsJoin(room);
     }
 
     /**
@@ -122,7 +122,7 @@ public class Emitter {
      * @param room -
      */
     public void socketsLeave(String... room) {
-        new BroadcastOperator(this.redisClient, this.broadcastOptions).socketsLeave(room);
+        new BroadcastOperator(this.publishListener, this.broadcastOptions).socketsLeave(room);
     }
 
     /**
@@ -131,7 +131,7 @@ public class Emitter {
      * @param close - whether to close the underlying connection
      */
     public void disconnectSockets(boolean close) {
-        new BroadcastOperator(this.redisClient, this.broadcastOptions).disconnectSockets(close);
+        new BroadcastOperator(this.publishListener, this.broadcastOptions).disconnectSockets(close);
     }
 
     /**
@@ -147,9 +147,9 @@ public class Emitter {
         }};
         try {
             String request = this.broadcastOptions.parser.stringify(map);
-            this.redisClient.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
+            this.publishListener.publish(this.broadcastOptions.requestChannel, request.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
-            this.broadcastOptions.logger.debug("serverSideEmit: {}", exception.toString());
+            this.broadcastOptions.logger.error("serverSideEmit", exception);
         }
     }
 }
