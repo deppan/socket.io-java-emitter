@@ -5,7 +5,7 @@ public interface PublishListener {
     /**
      *
      * @param channel will be sent to
-     * @param msg     either a String or a byte[]
+     * @param msg     msg
      */
-    void publish(String channel, Object msg);
+    void publish(String channel, byte[] msg);
 }

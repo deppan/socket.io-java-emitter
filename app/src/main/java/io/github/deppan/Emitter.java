@@ -11,6 +11,10 @@ public class Emitter {
     private final BroadcastOptions broadcastOptions;
     private final PublishListener publishListener;
 
+    public Emitter(PublishListener publishListener) {
+        this(publishListener, null, null);
+    }
+
     public Emitter(PublishListener publishListener, EmitterOptions opts, String nsp) {
         if (nsp == null) {
             nsp = "/";
