@@ -3,14 +3,14 @@ socket.io-java-emitter
 
 A Java implementation of socket.io-emitter
 
-This project uses [jackson-dataformat-msgpack][mspack-java] and [RedisTemplate]() or [RedisPool]().
+This project uses [jackson-dataformat-msgpack][mspack-java].
 
 ### Download
 
 Gradle:
 ```gradle
 dependencies {
-  implementation 'io.github.deppan:socket.io-java-emitter:1.0.5'
+  implementation 'io.github.deppan:socket.io-java-emitter:1.0.6'
 }
 ```
 
@@ -19,7 +19,7 @@ Maven:
 <dependency>
   <groupId>io.github.deppan</groupId>
   <artifactId>io-java-emitter</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
 </dependency>
 ```
 
@@ -28,16 +28,29 @@ Maven:
 ### Using with RedisTemplate
 
 ```java
-RedisClient redisClient = new RedisClient(redisTemplate);
-Emitter io = new Emitter(redisClient);
+RedisTemplate<String, byte[]> redisTemplate;
+PublishListener publishListener = new PublishListener() {
+    @Override
+    public void publish(String channel, Object msg) {
+        redisTemplate.convertAndSend(channel, msg);
+    }
+};
+Emitter io = new Emitter(publishListener);
 io.emit("event","Hello World!");
 ```
 
 ### Using with JedisPool
 
 ```java
-RedisClient redisClient = new RedisClient(redisPool);
-Emitter io = new Emitter(redisClient);
+JedisPool jedisPool;
+RedisTemplate<String, byte[]> redisTemplate;
+PublishListener publishListener = new PublishListener() {
+    @Override
+    public void publish(String channel, Object msg) {
+        redisTemplate.convertAndSend(channel, msg);
+    }
+};
+Emitter io = new Emitter(publishListener);
 io.emit("event","Hello World!");
 ```
 

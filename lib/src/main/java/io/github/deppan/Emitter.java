@@ -140,7 +140,7 @@ public class Emitter {
      * @param args - any number of serializable arguments
      */
     public void serverSideEmit(Object... args) {
-        Map<String, Object> map = new HashMap<>() {{
+        Map<String, Object> map = new HashMap<String, Object>() {{
             put("uid", Emitter.UID);
             put("type", RequestType.SERVER_SIDE_EMIT.value);
             put("data", args);

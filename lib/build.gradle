@@ -1,10 +1,14 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'org.jreleaser' version '1.22.0'
 }
 
+group = 'io.github.deppan'
+version = versionName()
+
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility = '8'
     withJavadocJar()
     withSourcesJar()
 }
@@ -26,14 +30,6 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-static def release() {
-    return "https://s01.oss.sonatype.org/content/repositories/releases"
-}
-
-static def snapshot() {
-    return "https://s01.oss.sonatype.org/content/repositories/snapshots"
-}
-
 static def branch() {
     return 'git symbolic-ref --short -q HEAD'.execute().text.trim()
 }
@@ -47,14 +43,6 @@ static def latestTag() {
     }
 }
 
-static def publishUrl() {
-    if ("main".equalsIgnoreCase(branch())) {
-        return release()
-    } else {
-        return snapshot()
-    }
-}
-
 static def versionName() {
     if ("main".equalsIgnoreCase(branch())) {
         return latestTag()
@@ -63,11 +51,52 @@ static def versionName() {
     }
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'io.github.deppan'
+            artifactId = 'socket.io-java-emitter'
+
+            from components.java
+
+            pom {
+                name = 'socket.io-java-emitter'
+                description = 'A Java implementation of socket.io-emitter'
+                url = 'https://github.com/deppan/socket.io-java-emitter'
+                inceptionYear = '2023'
+                licenses {
+                    license {
+                        name = 'Apache-2.0'
+                        url = 'https://spdx.org/licenses/Apache-2.0.html'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'deppan'
+                        name = 'Deppan'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/deppan/socket.io-java-emitter.git'
+                    developerConnection = 'scm:git:ssh://github.com/deppan/socket.io-java-emitter.git'
+                    url = 'https://github.com/deppan/socket.io-java-emitter'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = layout.buildDirectory.dir('staging-deploy')
+        }
+    }
+}
+
 jreleaser {
     project {
         name = 'socket.io-java-emitter'
         version = versionName()
-        author('deppan')
+        authors = ['deppan']
         description = 'A Java implementation of socket.io-emitter.'
         inceptionYear = "2023"
         license = 'MIT'
@@ -83,27 +112,33 @@ jreleaser {
     gitRootSearch = true
 
     signing {
-        active = 'ALWAYS'
-        armored = true
-        mode = 'FILE'
-        publicKey = '/Users/deppan/.jreleaser/public.pgp'
-        secretKey = '/Users/deppan/.jreleaser/private.pgp'
+        pgp {
+            active = 'ALWAYS'
+            armored = true
+        }
     }
 
     deploy {
         maven {
-            mavenCentral.create("sonatype") {
-                active = 'ALWAYS'
-                url = 'https://central.sonatype.com/api/v1/publisher'
-                stagingRepository('build/staging-deploy')
-                setAuthorization("Basic")
-                applyMavenCentralRules = true
-                sign = true
-                checksums = true
-                sourceJar = true
-                javadocJar = true
-                retryDelay = 60
+            mavenCentral {
+                'release-deploy' {
+                    active = 'ALWAYS'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    stagingRepository('build/staging-deploy')
+                }
             }
+            nexus2 {
+                "snapshot-deploy" {
+                    active = 'SNAPSHOT'
+                    snapshotUrl = 'https://central.sonatype.com/repository/maven-snapshots/'
+                    applyMavenCentralRules = true
+                    snapshotSupported = true
+                    closeRepository = true
+                    releaseRepository = true
+                    stagingRepository('build/staging-deploy')
+                }
+            }
+
         }
     }
 }
