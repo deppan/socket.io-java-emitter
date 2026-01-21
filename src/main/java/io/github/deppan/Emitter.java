@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("UnusedReturnValue")
 public class Emitter {
 
     public final static String UID = "emitter";
@@ -146,7 +147,7 @@ public class Emitter {
     public void serverSideEmit(Object... args) {
         Map<String, Object> map = new HashMap<String, Object>() {{
             put("uid", Emitter.UID);
-            put("type", RequestType.SERVER_SIDE_EMIT.value);
+            put("type", RequestType.SERVER_SIDE_EMIT);
             put("data", args);
         }};
         try {

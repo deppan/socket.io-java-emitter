@@ -16,7 +16,7 @@ public class MsgPackParserTests {
         boolean close = false;
 
         Map<String, Object> map = new HashMap<String, Object>() {{
-            put("type", RequestType.REMOTE_DISCONNECT.value);
+            put("type", RequestType.REMOTE_DISCONNECT);
             put("opts", new HashMap<String, Object>() {{
                 put("rooms", new ArrayList<>(rooms));
                 put("except", new ArrayList<>(exceptRooms));

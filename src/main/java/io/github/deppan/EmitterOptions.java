@@ -4,10 +4,17 @@ public class EmitterOptions {
     /**
      * default "socket.io"
      */
-    private String key = null;
-    private Parser parser = null;
+    private String key;
+    /**
+     * default MsgPackParser
+     */
+    private Parser parser;
 
     public EmitterOptions() {
+    }
+
+    public EmitterOptions(String key) {
+        this.key = key;
     }
 
     public EmitterOptions(String key, Parser parser) {

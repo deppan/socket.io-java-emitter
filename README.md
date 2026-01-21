@@ -25,29 +25,32 @@ Maven:
 
 ## Usage
 
-### Using with RedisTemplate
+### Using with io.lettuce.core.RedisClient
 
 ```java
-RedisTemplate<String, byte[]> redisTemplate;
-PublishListener publishListener = new PublishListener() {
+io.lettuce.core.RedisClient redisClient;
+StatefulRedisConnection<byte[], byte[]> connect = redisClient.connect(ByteArrayCodec.INSTANCE);
+RedisAsyncCommands<byte[], byte[]> commands = connect.async();
+PublishListener listener = new PublishListener() {
+
     @Override
-    public void publish(String channel, Object msg) {
-        redisTemplate.convertAndSend(channel, msg);
+    public void publish(String channel, byte[] msg) {
+        commands.publish(channel.getBytes(StandardCharsets.UTF_8), msg);
     }
 };
 Emitter io = new Emitter(publishListener);
 io.emit("event","Hello World!");
 ```
 
-### Using with JedisPool
+### Using with redis.clients.jedis.RedisClient
 
 ```java
-JedisPool jedisPool;
-RedisTemplate<String, byte[]> redisTemplate;
-PublishListener publishListener = new PublishListener() {
+redis.clients.jedis.RedisClient redisClient;
+PublishListener listener = new PublishListener() {
+
     @Override
-    public void publish(String channel, Object msg) {
-        redisTemplate.convertAndSend(channel, msg);
+    public void publish(String channel, byte[] msg) {
+        redisClient.publish(channel.getBytes(StandardCharsets.UTF_8), msg);
     }
 };
 Emitter io = new Emitter(publishListener);

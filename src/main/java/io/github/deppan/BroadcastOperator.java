@@ -111,7 +111,7 @@ public class BroadcastOperator {
         data.add(event);
         Collections.addAll(data, args);
         Map<String, Object> packet = new HashMap<String, Object>() {{
-            put("type", PacketType.EVENT.value);
+            put("type", PacketType.EVENT);
             put("data", data);
             put("nsp", BroadcastOperator.this.broadcastOptions.nsp);
         }};
@@ -142,12 +142,12 @@ public class BroadcastOperator {
      */
     public void socketsJoin(String... rooms) {
         Map<String, Object> map = new HashMap<String, Object>() {{
-            put("type", RequestType.REMOTE_JOIN.value);
+            put("type", RequestType.REMOTE_JOIN);
             put("opts", new HashMap<String, Object>() {{
                 put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
                 put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
             }});
-            put("rooms", rooms.length == 1 ? rooms[0] : Arrays.asList(rooms));
+            put("rooms", Arrays.asList(rooms));
         }};
 
         try {
@@ -165,7 +165,7 @@ public class BroadcastOperator {
      */
     public void socketsLeave(String... rooms) {
         Map<String, Object> map = new HashMap<String, Object>() {{
-            put("type", RequestType.REMOTE_LEAVE.value);
+            put("type", RequestType.REMOTE_LEAVE);
             put("opts", new HashMap<String, Object>() {{
                 put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
                 put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
@@ -188,7 +188,7 @@ public class BroadcastOperator {
      */
     public void disconnectSockets(boolean close) {
         Map<String, Object> map = new HashMap<String, Object>() {{
-            put("type", RequestType.REMOTE_DISCONNECT.value);
+            put("type", RequestType.REMOTE_DISCONNECT);
             put("opts", new HashMap<String, Object>() {{
                 put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
                 put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
