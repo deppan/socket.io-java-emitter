@@ -3,23 +3,26 @@ socket.io-java-emitter
 
 A Java implementation of socket.io-emitter
 
-This project uses [jackson-dataformat-msgpack][mspack-java] and [RedisTemplate]() or [RedisPool]().
+This project uses [jackson-dataformat-msgpack][mspack-java].
 
 ### Download
 
 Gradle:
+
 ```gradle
 dependencies {
-  implementation 'io.github.deppan:socket.io-java-emitter:1.0.5'
+  implementation 'io.github.deppan:socket.io-java-emitter:1.0.6'
 }
 ```
 
 Maven:
+
 ```xml
+
 <dependency>
-  <groupId>io.github.deppan</groupId>
-  <artifactId>io-java-emitter</artifactId>
-  <version>1.0.5</version>
+    <groupId>io.github.deppan</groupId>
+    <artifactId>io-java-emitter</artifactId>
+    <version>1.0.6</version>
 </dependency>
 ```
 
@@ -28,24 +31,38 @@ Maven:
 ### Using with RedisTemplate
 
 ```java
-RedisClient redisClient = new RedisClient(redisTemplate);
-Emitter io = new Emitter(redisClient);
-io.emit("event","Hello World!");
+RedisTemplate<String, byte[]> redisTemplate;
+PublishListener publishListener = new PublishListener() {
+    @Override
+    public void publish(String channel, byte[] msg) {
+        redisTemplate.convertAndSend(channel, msg);
+    }
+};
+Emitter io = new Emitter(publishListener);
+io.emit("event", "Hello World!");
 ```
 
-### Using with JedisPool
+### Using with io.lettuce.core.RedisClient
 
 ```java
-RedisClient redisClient = new RedisClient(redisPool);
-Emitter io = new Emitter(redisClient);
-io.emit("event","Hello World!");
+io.lettuce.core.RedisClient redisClient;
+StatefulRedisConnection<byte[], byte[]> connect = redisClient.connect(ByteArrayCodec.INSTANCE);
+RedisAsyncCommands<byte[], byte[]> commands = connect.async();
+PublishListener publishListener = new PublishListener() {
+    @Override
+    public void publish(String channel, byte[] msg) {
+        commands.publish(channel.getBytes(StandardCharsets.UTF_8), msg);
+    }
+};
+Emitter io = new Emitter(publishListener);
+io.emit("event", "Hello World!");
 ```
 
 ## API
 
-### Emitter(client, opts, nsp)
+### Emitter(publishListener, opts, nsp)
 
-`client` is a wrapper that wraps the redis instance and publishes the message.
+`publishListener` is a callback that passes the event and message. Use your favorite Redis client to send data.
 
 The following options are allowed:
 
@@ -60,13 +77,27 @@ The following options are allowed:
 
 Specifies a specific `room` that you want to emit to.
 
+```java
+io.to("room").emit("event", "Hello World!");
+
+io.in("room").emit("event", "Hello World!");
+```
+
 ### Emitter#except(String... room):BroadcastOperator
 
 Specifies a specific `room` that you want to exclude from broadcasting.
 
+```java
+io.except("room").emit("event", "Hello World!");
+```
+
 ### Emitter#of(String namespace):Emitter
 
 Specifies a specific namespace that you want to emit to.
+
+```java
+io.of("namespace").emit("event", "Hello World!");
+```
 
 ### Emitter#socketsJoin(String... room)
 

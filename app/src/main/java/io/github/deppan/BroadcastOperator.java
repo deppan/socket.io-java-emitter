@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public class BroadcastOperator {
 
-    private final Set<String> reserved = new HashSet<>() {{
+    private final Set<String> reserved = new HashSet<String>() {{
         add("connect");
         add("connect_error");
         add("disconnect");
@@ -110,12 +110,12 @@ public class BroadcastOperator {
         List<Object> data = new ArrayList<>();
         data.add(event);
         Collections.addAll(data, args);
-        Map<String, Object> packet = new HashMap<>() {{
+        Map<String, Object> packet = new HashMap<String, Object>() {{
             put("type", PacketType.EVENT.value);
             put("data", data);
             put("nsp", BroadcastOperator.this.broadcastOptions.nsp);
         }};
-        Map<String, Object> ops = new HashMap<>() {{
+        Map<String, Object> ops = new HashMap<String, Object>() {{
             put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
             put("flags", BroadcastOperator.this.flags);
             put("except", new ArrayList<>(BroadcastOperator.this.exceptRooms));
@@ -141,7 +141,7 @@ public class BroadcastOperator {
      * @param rooms
      */
     public void socketsJoin(String... rooms) {
-        Map<String, Object> map = new HashMap<>() {{
+        Map<String, Object> map = new HashMap<String, Object>() {{
             put("type", RequestType.REMOTE_JOIN.value);
             put("opts", new HashMap<String, Object>() {{
                 put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
@@ -164,7 +164,7 @@ public class BroadcastOperator {
      * @param rooms
      */
     public void socketsLeave(String... rooms) {
-        Map<String, Object> map = new HashMap<>() {{
+        Map<String, Object> map = new HashMap<String, Object>() {{
             put("type", RequestType.REMOTE_LEAVE.value);
             put("opts", new HashMap<String, Object>() {{
                 put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
@@ -187,7 +187,7 @@ public class BroadcastOperator {
      * @param close - whether to close the underlying connection
      */
     public void disconnectSockets(boolean close) {
-        Map<String, Object> map = new HashMap<>() {{
+        Map<String, Object> map = new HashMap<String, Object>() {{
             put("type", RequestType.REMOTE_DISCONNECT.value);
             put("opts", new HashMap<String, Object>() {{
                 put("rooms", new ArrayList<>(BroadcastOperator.this.rooms));
